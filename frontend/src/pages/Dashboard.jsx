@@ -1,95 +1,46 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";  
 import {DashboardIcon, TasksIcon, ProjectsIcon, TeamsIcon, CalendarIcon, SettingsIcon, TaskTerminatedIcon, TaskOnGoingIcon, UsersOnLineIcon, LateTaskIcon} from "../assets/icons";
 
 function Dashboard() {
+   const [today, setToday] = useState(""); // on va stocker la date actuelle 
+   useEffect (() => {
+      const date = new Date();
+      const options = { weekday: "long", year: "numeric", month: "long", day: "numeric"};
+      setToday(date.toLocaleDateString("fr-FR", options));
+   }, [])
     return (
         <div className="space-y-6">
             {/* Contenu central temporaire */}
-            <div className="flex-1 p-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg text-white">
                               
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className="text-3xl font-bold">
+                 <p className="text-lg mt-1"> 
+                  {today}
+                 </p>
                 Bienvenue sur le tableau de bord
                 
-              </h1>
+               </h1>
           </div>
-
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-6"> {/**Le responsive design permet que ton application soit belle et utilisable sur tous les appareils, sans que l’utilisateur ait à zoomer ou scroller dans tous les sens. */}
-                {/**bloc 1 */}
-              <div className="bg-white p-6 rounded-xl shadow-md">
-                  <ProjectsIcon className="text-blue-600 text-4xl" />
-                  <p className="text-gray-500">
-                    Projets
-                  </p>
-                   <h2 className="text-2xl font-bold text-blue-600">
-                    12
-                   </h2>
-
-             </div>
-
-             {/**bloc 2 */}
-              <div className="bg-white p-6 rounded-xl shadow-md">
-                 <TaskOnGoingIcon className="text-blue-600 text-4xl"/>
-                  <p className="text-gray-500">
-                   Tâches en cours
-                  </p>
-                   <h2 className="text-2xl font-bold text-blue-600">
-                   34
-                   </h2>
-             </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-md">
-                 <TeamsIcon className="text-purple-600 text-5xl" />
-                  <p className="text-gray-500">
-                   Equipes
-                  </p>
-                   <h2 className="text-2xl font-bold text-blue-600">
-                    5
-                   </h2>
-             </div>
-
-             <div className="bg-white p-6 rounded-xl shadow-md">
-                 <TaskTerminatedIcon className="text-blue-600 text-4xl"/>
-                  <p className="text-gray-500">
-                   Tâches terminées
-                  </p>
-                   <h2 className="text-2xl font-bold text-green-600">
-                    11
-                   </h2>
-             </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-md">
-                 <LateTaskIcon className="text-purple-600 text-5xl"/>
-                  <p className="text-gray-500">
-                   Tâches en retards
-                  </p>
-                   <h2 className="text-2xl font-bold text-red-600">
-                    6
-                   </h2>
-             </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-md">
-                 <CalendarIcon className="text-purple-600 text-5xl" />
-                  <p className="text-gray-500">
-                   Evénements à venir
-                  </p>
-                   <h2 className="text-2xl font-bold text-purple-600">
-                    3
-                   </h2>
-             </div>
-
-              <div className="bg-white p-6  rounded-xl shadow-md ">
-                 <UsersOnLineIcon className="text-purple-600 text-5xl" />
-                  <p className="text-gray-500">
-                  Utilisateurs actifs
-                  </p>
-                   <h2 className="text-2xl font-bold text-indigo-600">
-                   18
-                   </h2>
-             </div>
+          <div className="mt-4 md:mt-0">
+              <button className="px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg shadow hover:bg-gray-100 transition">
+                + Nouvelle tâche
+              </button>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 flex items-center justify-between">
+            <div>
+               <p className="text-gray-500 font-medium">
+                  Projets
+               </p>
+               <h2 className="text-2xl font-bold text-blue-600">
+                 12
+               </h2>
+            </div>
+              <ProjectsIcon className = "text-blue-600 text-5xl"/>
           </div>
        </div>
-    );
-}
+      );
+   }
 
 export default Dashboard;

@@ -1,5 +1,6 @@
 //index.js
 console.log(" Le fichier index.js est exécuté");
+require('dotenv').config();
 
 const express = require("express");
 const cors = require("cors"); //  importer cors

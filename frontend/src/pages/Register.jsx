@@ -1,126 +1,160 @@
-import React from "react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { EyeIcon, EyeSlashIcon } from "../assets/icons";
 
+function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassWord] = useState("");
+  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-function Register(){
-    const [email, setEmail] = useState("");
-    const [password, setPassWord] = useState("");
-    const [message, setMessage] = useState("");
-    const [name, setName] = useState("");
-    const [isError, setIsError] = useState(false);
-    const navigate = useNavigate();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const handleSubmit = async (e) => {
-  e.preventDefault(); // empêche le rechargement de la page
+    if (!name.trim()) {
+      setMessage("Please enter your name");
+      return;
+    }
 
-  const response = await fetch('http://localhost:3001/api/auth/register', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password, name})
-  });
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setMessage("Please enter a valid email address");
+      return;
+    }
 
-  const data = await response.json();
- if (response.ok) {
-  setMessage("Inscription réussie !");
-  setIsError(false);
-  setTimeout(() => {
-    navigate("/login");
-  }, 2000);
-} else {
-   setMessage(data.message || 'Une erreur est survenue');
-      setIsError(true);
-   }
- };
+    if (!password.trim() || password.trim().length < 6) {
+      setMessage("Password must be at least 6 characters");
+      return;
+    }
 
-    
-    return(
-        <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-100 to-gray-100 " >
-            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md transform hover:scale-105 transition duration-200">
-                <h1 className="text-4xl text-blue-600 font-extrabold mb-8">
-                    Créer un compte 
-                </h1>
-                <form onSubmit={handleSubmit}>
+    try {
+      const response = await fetch("http://localhost:3001/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          password: password.trim(),
+        }),
+      });
 
-                    {/**section nom */}
+      const data = await response.json();
+      if (response.ok) {
+        setMessage("Registration successful! Redirecting...");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else {
+        setMessage(data.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Error during registration", error);
+      setMessage("Server error");
+    }
+  };
 
-                    <div className="mb-4">
-                        <label htmlFor="nom" className="block text-sm font-medium  text-gray-600">
-                            nom
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-teal-900 to-green-800 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Decorations */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,215,0,0.1)_0%,_transparent_70%)] opacity-50"></div>
+      <div className="absolute top-0 left-0 w-1/3 h-1/3 bg-[linear-gradient(45deg,transparent_50%,#4ade80_50%)] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-1/4 h-1/4 bg-[linear-gradient(-45deg,transparent_50%,#22d3ee_50%)] opacity-15 animate-pulse-slow"></div>
 
-                        </label>
+      <div className="relative z-10 w-full max-w-md">
+        {/* App name */}
+        <div className="flex items-center justify-center mb-10">
+          <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-green-300 to-teal-500 drop-shadow-lg animate-fadeIn">
+            AlphaTasks
+          </span>
+        </div>
 
-                        <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        required
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition duration-200"
-                        
-                        />
-                    </div>
+        {/* Welcome message */}
+        <h1 className="text-4xl font-semibold text-white text-center mb-10 drop-shadow-xl animate-fadeIn-delay">
+          Créez votre compte et commencez
+        </h1>
 
-                    {/**section por l'email */}
-
-                    <div className="mb-4">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-600">
-                            Adresse email
-
-                        </label>
-                        <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition duration-200"
-
-                        />
-                        
-                    </div>
-
-                    {/**section mot de passe */}
-
-                    <div className="mb-4">
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 ">
-                            Mot de passe
-
-                        </label>
-
-                        <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        value={password}
-                        onChange={(e) => setPassWord(e.target.value)}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white transition duration-200"
-
-                        />
-
-                    </div>
-
-                    <button
-                    type="submit"
-                    className="w-full text-white bg-green-500 px-4 py-2 rounded-lg hover: bg-green-700 transition-duration-200 "
-                    >
-                        S'inscrire
-                    </button>
-
-                    {message && (
-                        <div style={{ color: isError ? 'red' : 'green', marginTop: '10px' }}>
-                         {message}
-                         </div>
-                    )}
-
-                </form>
-
+        {/* Form */}
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 transform transition-all duration-500 hover:shadow-3xl hover:-translate-y-2">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Nom
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Entrez votre nom"
+                className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-400 transition-all duration-300 bg-white/95"
+              />
             </div>
 
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Adresse email
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="Entrez votre adresse email"
+                className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-400 transition-all duration-300 bg-white/95"
+              />
+            </div>
+
+            <div className="relative">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Mot de passe
+              </label>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassWord(e.target.value)}
+                required
+                placeholder="Entrez votre mot de passe"
+                className="w-full mt-2 px-4 py-3 pr-12 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-400 transition-all duration-300 bg-white/95"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-[60%] -translate-y-1/2 flex items-center text-gray-500 hover:text-green-600 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 rounded-full p-2 transition-all duration-300 hover:bg-green-100/40"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 rounded-lg hover:from-green-700 hover:to-teal-700 transition-all duration-300 font-semibold text-lg shadow-lg hover:shadow-xl"
+            >
+              S’inscrire
+            </button>
+
+            {message && (
+              <div className={`text-sm text-center mt-4 ${message.includes("successful") ? "text-green-600" : "text-red-500"} animate-fadeIn`}>
+                {message}
+              </div>
+            )}
+          </form>
+
+          <div className="text-sm text-gray-600 text-center mt-6 space-x-4">
+            <Link to="/login" className="hover:underline text-teal-600 font-medium">
+              Vous avez déjà un compte 
+            </Link>
+          </div>
         </div>
-    );
-};
+      </div>
+    </div>
+  );
+}
+
 export default Register;
