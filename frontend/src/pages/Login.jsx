@@ -35,6 +35,10 @@ function Login() {
       const data = await response.json();
       if (response.ok) {
         localStorage.setItem("userLoggedIn", "true");
+        localStorage.setItem("token", data.token || data.newToken); // Correction ici
+        if (data.utilisateur && data.utilisateur.name) {
+          localStorage.setItem("username", data.utilisateur.name); // Stocke aussi le nom pour affichage rapide
+        }
         navigate("/dashboard");
       } else {
         setMessage(data.message || "Échec de la connexion");

@@ -21,7 +21,13 @@ app.use(cors({
 //import du router d'authentification
 const authRoutes = require ("./routes/authRoutes")
 
-// definition d'un chemin global pour toutes les routes
+//import du router de dashboard
+const dashboardRoutes = require ("./routes/dashboardRoutes")
+
+// definition du chemin global pour toutes les routes de dashboard
+app.use("/api", dashboardRoutes) 
+
+// definition d'un chemin global pour toutes les routes 
 app.use("/api/auth/", authRoutes); // cest juste pour dire que toutes les routes qui seront dans authRoutes vont commencer par /api/auth
 
 //Route de test

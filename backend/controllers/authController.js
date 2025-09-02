@@ -77,6 +77,11 @@ const registerUser = async (req, res) => {
 
     return res.status(201).json({
       message: "Utilisateur enregistré avec succès !",
+      utilisateur: {
+    _id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+  },
       newToken,
     });
   } catch (error) {
@@ -167,6 +172,28 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Fonction pour récupérer l'utilisateur connecté
+const getCurrentUser = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: "Token manquant" });
+    }
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Correction ici : utilise decoded.id au lieu de decoded.userId
+    const utilisateur = await utilisateurs.findById(decoded.id).select("-password");
+    if (!utilisateur) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    res.json({ utilisateur });
+  } catch (error) {
+    console.error("Erreur récupération utilisateur :", error);
+    res.status(401).json({ message: "Token invalide ou expiré" });
+  }
+};
 
 // Exporter les fonctions pour qu’elles soient utilisées dans les routes
 module.exports = {
@@ -174,4 +201,5 @@ module.exports = {
   registerUser,
   forgotPassword,
   resetPassword,
+  getCurrentUser,
 };
