@@ -15,6 +15,7 @@ function Dashboard() {
   const [username, setUsername] = useState("");
   const [dashboardData, setDashboardData] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [projects, setProjects] = useState([]);
   const navigate = useNavigate();
 
   // Date du jour et nom utilisateur
@@ -63,6 +64,19 @@ function Dashboard() {
       );
   }, []);
 
+  // Récupération des projets
+  useEffect(() => {
+    fetch("http://localhost:3001/api/projects", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => res.ok ? res.json() : Promise.resolve([]))
+      .then((data) => Array.isArray(data) ? setProjects(data) : setProjects([]))
+      .catch(() => setProjects([]));
+  }, []);
+
   // Compteurs de tâches
   const nbAFaire = tasks.filter((t) => t.status === "a_faire").length;
   const nbEnCours = tasks.filter((t) => t.status === "en_cours").length;
@@ -107,7 +121,7 @@ function Dashboard() {
     },
     {
       title: "Projets",
-      value: dashboardData?.projets ?? "--",
+      value: projects.length,
       icon: <ProjectsIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-indigo-100/80 to-indigo-50/60",
       iconBg: "bg-indigo-100",
@@ -254,6 +268,62 @@ function Dashboard() {
             onClick={() => navigate("/tasks")}
           >
             Voir toutes les tâches
+          </button>
+        </div>
+      </div>
+
+      {/* Mes projets */}
+      <div className="bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl shadow p-8 mt-8">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Mes projets</h2>
+        {projects.length === 0 ? (
+          <p className="text-gray-500">Aucun projet pour le moment.</p>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {projects.map((project) => (
+              <li key={project._id} className="py-4 flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                  <span className="font-semibold text-lg">{project.title}</span>
+                  <span className="ml-3">
+                    {/* Statut */}
+                    {statusBadge(project.status)}
+                  </span>
+                  <div className="text-gray-500 text-sm mt-1">
+                    Manager : {project.manager}
+                  </div>
+                </div>
+                <div className="flex items-center gap-6 mt-2 md:mt-0">
+                  <span className="text-gray-400 text-sm">
+                    Échéance : {formatDate(project.deadline)}
+                  </span>
+                  <span className="text-indigo-600 font-semibold text-sm">
+                    Tâches :
+                    {tasks.filter(t => t.projectId === project._id).length === 0
+                      ? " Aucune"
+                      : (
+                        <ul className="list-disc ml-4">
+                          {tasks
+                            .filter(t => t.projectId === project._id)
+                            .map(t => (
+                              <li key={t._id} className="text-xs text-gray-700">{t.title}</li>
+                            ))}
+                        </ul>
+                      )
+                    }
+                  </span>
+                  <span className="text-green-600 font-semibold text-sm">
+                    Progression : {project.progress}%
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="flex justify-end mt-6">
+          <button
+            className="text-indigo-600 hover:underline font-medium"
+            onClick={() => navigate("/projects")}
+          >
+            Voir tous les projets
           </button>
         </div>
       </div>

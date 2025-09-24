@@ -27,12 +27,17 @@ const dashboardRoutes = require ("./routes/dashboardRoutes")
 //import du router de tasks
 const taskRoutes = require ("./routes/taskRoutes")
 
+//import du router de projects
+const projectRoutes = require ("./routes/projectRoutes")
+
 // definition du chemin global pour toutes les routes de dashboard
 app.use("/api", dashboardRoutes) ;
 
 // definition du chemin global pour toutes les routes de tasks
 app.use("/api/tasks", taskRoutes);
 
+// definition du chemin global pour toutes les routes de projects
+app.use("/api/projects", projectRoutes);
 
 // definition d'un chemin global pour toutes les routes 
 app.use("/api/auth/", authRoutes); // cest juste pour dire que toutes les routes qui seront dans authRoutes vont commencer par /api/auth

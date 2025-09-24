@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FaPlus } from "react-icons/fa";
 import ProjectLists from "../components/ProjectLists";
 import ProjectForm from "../components/ProjectForm";
@@ -9,13 +9,168 @@ function Projects() {
   const [deadlineFilter, setDeadlineFilter] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "",
+    message: "",
+  });
 
-  const [projects, setProjects] = useState([
-    { id: 1, title: "Refonte site web", manager: "Alice", status: "en_cours", deadline: "2025-09-20", progress: 65, tasks: 12 },
-    { id: 2, title: "Campagne marketing Q4", manager: "Bob", status: "a_faire", deadline: "2025-09-28", progress: 0, tasks: 8 },
-    { id: 3, title: "Migration base de données", manager: "Chloé", status: "termine", deadline: "2025-08-10", progress: 100, tasks: 20 },
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [newProject, setNewProject] = useState({
+    title: "",
+    manager: "",
+    status: "a_faire",
+    deadline: "",
+    progress: 0,
+    tasks: 0,
+  });
 
+  // Charger les projets depuis le backend (filtrage utilisateur)
+  useEffect(() => {
+    fetch("http://localhost:3001/api/projects", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => (res.ok ? res.json() : Promise.resolve([])))
+      .then((data) => {
+        setProjects(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setProjects([]));
+  }, []);
+
+  // Format date utilitaire
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  // Ajout d'un projet
+  const handleAddProject = (e) => {
+    e.preventDefault();
+    fetch("http://localhost:3001/api/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(newProject),
+    })
+      .then((res) => {
+        if (res.ok) {
+          setNotification({
+            show: true,
+            type: "success",
+            message: "Projet créé avec succès !",
+          });
+          return res.json();
+        } else {
+          setNotification({
+            show: true,
+            type: "error",
+            message: "Échec de la création du projet.",
+          });
+        }
+        setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
+      })
+      .then((savedProject) => {
+        if (savedProject && savedProject._id) {
+          setProjects([...projects, savedProject]);
+          setNewProject({
+            title: "",
+            manager: "",
+            status: "a_faire",
+            deadline: "",
+            progress: 0,
+            tasks: 0,
+          });
+          setShowAddModal(false);
+        }
+      });
+  };
+
+  // Modification d'un projet
+  const handleSave = (e) => {
+    e.preventDefault();
+    fetch(
+      `http://localhost:3001/api/projects/${
+        selectedProject._id || selectedProject.id
+      }`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(selectedProject),
+      }
+    )
+      .then((res) => {
+        if (res.ok) {
+          setNotification({
+            show: true,
+            type: "success",
+            message: "Projet modifié avec succès !",
+          });
+        } else {
+          setNotification({
+            show: true,
+            type: "error",
+            message: "Échec de la modification du projet.",
+          });
+        }
+        setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
+        return res.json();
+      })
+      .then((updatedProject) => {
+        if (updatedProject && updatedProject._id) {
+          setProjects(
+            projects.map((p) =>
+              (p._id || p.id) === (updatedProject._id || updatedProject.id)
+                ? updatedProject
+                : p
+            )
+          );
+          setSelectedProject(null);
+        }
+      });
+  };
+
+  // Suppression d'un projet
+  const handleDeleteProject = (id) => {
+    fetch(`http://localhost:3001/api/projects/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setNotification({
+            show: true,
+            type: "success",
+            message: "Projet supprimé avec succès !",
+          });
+        } else {
+          setNotification({
+            show: true,
+            type: "error",
+            message: "Échec de la suppression du projet.",
+          });
+        }
+        setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
+        return res.json();
+      })
+      .then(() => setProjects(projects.filter((p) => (p._id || p.id) !== id)));
+  };
+
+  // Filtrage
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -50,56 +205,6 @@ function Projects() {
     });
   }, [projects, search, statusFilter, deadlineFilter, today]);
 
-  // Format date utilitaire
-  function formatDate(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
-  // Ajout d'un projet
-  const [newProject, setNewProject] = useState({
-    title: "",
-    manager: "",
-    status: "a_faire",
-    deadline: "",
-    progress: 0,
-    tasks: 0,
-  });
-
-  const handleAddProject = (e) => {
-    e.preventDefault();
-    const nextId = projects.length ? Math.max(...projects.map(p => p.id)) + 1 : 1;
-    setProjects([
-      ...projects,
-      { ...newProject, id: nextId }
-    ]);
-    setNewProject({
-      title: "",
-      manager: "",
-      status: "a_faire",
-      deadline: "",
-      progress: 0,
-      tasks: 0,
-    });
-    setShowAddModal(false);
-  };
-
-  // Modification d'un projet
-  const handleSave = (e) => {
-    e.preventDefault();
-    setProjects(projects.map((p) => (p.id === selectedProject.id ? selectedProject : p)));
-    setSelectedProject(null);
-  };
-
-  // Suppression d'un projet
-  const handleDeleteProject = (id) => {
-    setProjects(projects.filter((p) => p.id !== id));
-  };
-
   return (
     <div className="p-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
       {/* En-tête */}
@@ -107,8 +212,21 @@ function Projects() {
         <div>
           <h2 className="text-3xl font-bold text-blue-800">Projets</h2>
           <p className="text-gray-500 mt-1 text-sm">
-            Cliquez sur <span className="inline-flex items-center gap-1 font-semibold">Modifier</span> ou <span className="inline-flex items-center gap-1 font-semibold">Supprimer</span> sur une carte.<br />
-            Utilisez <span className="inline-flex items-center gap-1 font-semibold">Ajouter un projet</span> pour créer un nouveau projet.
+            Cliquez sur{" "}
+            <span className="inline-flex items-center gap-1 font-semibold">
+              Modifier
+            </span>{" "}
+            ou{" "}
+            <span className="inline-flex items-center gap-1 font-semibold">
+              Supprimer
+            </span>{" "}
+            sur une carte.
+            <br />
+            Utilisez{" "}
+            <span className="inline-flex items-center gap-1 font-semibold">
+              Ajouter un projet
+            </span>{" "}
+            pour créer un nouveau projet.
           </p>
         </div>
         <div className="flex flex-1 items-center gap-3">
@@ -153,7 +271,7 @@ function Projects() {
       <ProjectLists
         projects={filteredProjects}
         onEdit={(p) => setSelectedProject({ ...p })}
-        onDelete={handleDeleteProject}
+        onDelete={(p) => handleDeleteProject(p._id || p.id)}
         formatDate={formatDate}
       />
 
@@ -186,6 +304,19 @@ function Projects() {
               isEdit={false}
             />
           </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification.show && (
+        <div
+          className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+            notification.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {notification.message}
         </div>
       )}
     </div>

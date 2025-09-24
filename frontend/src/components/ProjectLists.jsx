@@ -34,7 +34,9 @@ function ProjectLists({ projects, onEdit, onDelete, formatDate }) {
           <div className="flex justify-between items-start">
             <h3 className="text-xl font-semibold text-gray-900">{p.title}</h3>
             <span className={`px-3 py-1 rounded-full text-sm ${getStatusStyle(p.status)}`}>
-              {p.status.replace("_", " ")}
+              <span>
+                {(p.status ? p.status.replace("_", " ") : "Statut inconnu")}
+              </span>
             </span>
           </div>
           <div className="mt-4 flex items-center gap-3 text-sm text-gray-600">

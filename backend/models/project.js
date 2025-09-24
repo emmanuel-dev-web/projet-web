@@ -12,6 +12,11 @@ const projectSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "utilisateurs",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["a_faire", "en_cours", "termine"],

@@ -25,6 +25,11 @@ const taskSchema = new mongoose.Schema(
       ref: "utilisateurs",
       required: true,
     },
+    projectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "projects",
+      required: true,
+    },
   },
   { timestamps: true } // Ajoute automatiquement createdAt & updatedAt
 );
