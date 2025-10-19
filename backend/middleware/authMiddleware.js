@@ -12,7 +12,7 @@ const protect = (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Attacher les infos utilisateur au req pour usage ultérieur
-      req.user = { _id: decoded.id };
+      req.user = { id: decoded.id, _id: decoded.id };
 
       // Passer au middleware suivant
       next();

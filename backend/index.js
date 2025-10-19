@@ -11,11 +11,11 @@ const PORT = 3001; // port au tourne mon backend
 //Middleware pour parser le json
 app.use(express.json());
 
-// Autoriser le frontend sur localhost:5173
+// Autoriser tous les ports localhost en développement
 app.use(cors({
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "PUT", "DELETE"], // les méthodes que tu utilises
-  credentials: true, // si tu utilises les cookies/sessions
+  origin: /^http:\/\/localhost:\d+$/, // Accepte tous les ports localhost
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
 }));
 
 //import du router d'authentification
@@ -30,6 +30,9 @@ const taskRoutes = require ("./routes/taskRoutes")
 //import du router de projects
 const projectRoutes = require ("./routes/projectRoutes")
 
+//import du router de teams
+const teamsRoutes = require ("./routes/teamsRoutes")
+
 // definition du chemin global pour toutes les routes de dashboard
 app.use("/api", dashboardRoutes) ;
 
@@ -38,6 +41,9 @@ app.use("/api/tasks", taskRoutes);
 
 // definition du chemin global pour toutes les routes de projects
 app.use("/api/projects", projectRoutes);
+
+// definition du chemin global pour toutes les routes de teams
+app.use("/api/teams", teamsRoutes);
 
 // definition d'un chemin global pour toutes les routes 
 app.use("/api/auth/", authRoutes); // cest juste pour dire que toutes les routes qui seront dans authRoutes vont commencer par /api/auth

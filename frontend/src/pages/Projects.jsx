@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { FaPlus } from "react-icons/fa";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { FaPlus, FaEdit, FaTrash, FaFolderOpen } from "react-icons/fa"; // Ajout de FaFolderOpen
 import ProjectLists from "../components/ProjectLists";
 import ProjectForm from "../components/ProjectForm";
 
@@ -177,21 +177,21 @@ function Projects() {
     return d;
   }, []);
 
-  const isLate = (dateStr) => {
+  const isLate = useCallback((dateStr) => {
     if (!dateStr) return false;
     const d = new Date(dateStr);
     d.setHours(0, 0, 0, 0);
     return d < today;
-  };
+  }, [today]);
 
-  const isWithinDays = (dateStr, days) => {
+  const isWithinDays = useCallback((dateStr, days) => {
     if (!dateStr) return false;
     const d = new Date(dateStr);
     d.setHours(0, 0, 0, 0);
     const end = new Date(today);
     end.setDate(end.getDate() + days);
     return d >= today && d <= end;
-  };
+  }, [today]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
@@ -203,30 +203,19 @@ function Projects() {
       if (deadlineFilter === "month" && !isWithinDays(p.deadline, 30)) return false;
       return true;
     });
-  }, [projects, search, statusFilter, deadlineFilter, today]);
+  }, [projects, search, statusFilter, deadlineFilter, isLate, isWithinDays]);
 
   return (
     <div className="p-6 bg-gradient-to-br from-blue-50 via-white to-blue-100 min-h-screen">
       {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-3xl font-bold text-blue-800">Projets</h2>
+          <h2 className="text-3xl font-bold text-blue-800 flex items-center gap-2">
+            <FaFolderOpen className="text-blue-600" /> Projets
+          </h2>
           <p className="text-gray-500 mt-1 text-sm">
-            Cliquez sur{" "}
-            <span className="inline-flex items-center gap-1 font-semibold">
-              Modifier
-            </span>{" "}
-            ou{" "}
-            <span className="inline-flex items-center gap-1 font-semibold">
-              Supprimer
-            </span>{" "}
-            sur une carte.
-            <br />
-            Utilisez{" "}
-            <span className="inline-flex items-center gap-1 font-semibold">
-              Ajouter un projet
-            </span>{" "}
-            pour créer un nouveau projet.
+            Gérez vos projets, filtrez par statut ou échéance, modifiez ou supprimez un projet.<br />
+            Utilisez le bouton "Ajouter un projet" pour créer un nouveau projet.
           </p>
         </div>
         <div className="flex flex-1 items-center gap-3">
@@ -268,12 +257,83 @@ function Projects() {
       </div>
 
       {/* Liste des projets */}
-      <ProjectLists
-        projects={filteredProjects}
-        onEdit={(p) => setSelectedProject({ ...p })}
-        onDelete={(p) => handleDeleteProject(p._id || p.id)}
-        formatDate={formatDate}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredProjects.length === 0 ? (
+          <div className="col-span-3 text-center text-gray-400 py-12">
+            Aucun projet trouvé.
+          </div>
+        ) : (
+          filteredProjects.map((project) => (
+            <div
+              key={project._id || project.id}
+              className={`bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between border-l-4 ${
+                project.status === "termine"
+                  ? "border-green-500"
+                  : project.status === "en_cours"
+                  ? "border-yellow-400"
+                  : "border-blue-500"
+              }`}
+              style={{ minHeight: "220px" }}
+            >
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {project.title}
+                  </h3>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm ${
+                      project.status === "termine"
+                        ? "bg-green-100 text-green-800"
+                        : project.status === "en_cours"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
+                    {project.status.replace("_", " ")}
+                  </span>
+                </div>
+                <p className="mt-2 text-gray-700">{project.manager ? `Chef de projet : ${project.manager}` : ""}</p>
+                <div className="mt-2 text-sm text-gray-500">
+                  Date limite :{" "}
+                  <span
+                    className={
+                      new Date(project.deadline) < new Date() &&
+                      project.status !== "termine"
+                        ? "text-red-600 font-semibold"
+                        : ""
+                    }
+                  >
+                    {formatDate(project.deadline)}
+                  </span>
+                </div>
+                <div className="mt-2 text-xs text-gray-400">
+                  Progression : {project.progress || 0}%
+                </div>
+                <div className="mt-2 text-xs text-gray-400">
+                  Tâches : {project.tasks || 0}
+                </div>
+              </div>
+              {/* Boutons en bas, couleurs cohérentes */}
+              <div className="flex gap-2 mt-6 justify-end">
+                <button
+                  className="p-2 rounded-full bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                  title="Modifier"
+                  onClick={() => setSelectedProject({ ...project })}
+                >
+                  <FaEdit />
+                </button>
+                <button
+                  className="p-2 rounded-full bg-red-100 text-red-800 hover:bg-red-200"
+                  title="Supprimer"
+                  onClick={() => handleDeleteProject(project._id || project.id)}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
 
       {/* Modal modification */}
       {selectedProject && (

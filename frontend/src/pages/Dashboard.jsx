@@ -8,6 +8,8 @@ import {
   LateTaskIcon,
   CalendarIcon,
   UsersOnLineIcon,
+  PlusIcon
+
 } from "../assets/icons";
 
 function Dashboard() {
@@ -54,14 +56,38 @@ function Dashboard() {
       });
   }, []);
 
-  // Récupération des données du dashboard (projets, équipes, etc.)
-  useEffect(() => {
-    fetch("http://localhost:3001/api/dashboard")
+  // Fonction pour recharger les données du dashboard
+  const fetchDashboardData = () => {
+    console.log(" Rechargement des données dashboard...");
+    fetch("http://localhost:3001/api/dashboard", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
       .then((res) => res.json())
-      .then((data) => setDashboardData(data))
+      .then((data) => {
+        console.log("Données dashboard reçues:", data);
+        setDashboardData(data);
+      })
       .catch((err) =>
         console.error("Erreur lors de la récupération des données du dashboard :", err)
       );
+  };
+
+  // Récupération des données du dashboard au chargement
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  // Écouter les changements de focus pour recharger les données
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchDashboardData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Récupération des projets
@@ -103,7 +129,7 @@ function Dashboard() {
     },
     {
       title: "Tâches en cours",
-      value: nbEnCours,
+      value: dashboardData?.tâchesEnCours ?? nbEnCours,
       icon: <TaskOnGoingIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-purple-100/80 to-purple-50/60",
       iconBg: "bg-purple-100",
@@ -112,7 +138,7 @@ function Dashboard() {
     },
     {
       title: "Tâches terminées",
-      value: nbTermine,
+      value: dashboardData?.tâchesTerminées ?? nbTermine,
       icon: <TaskTerminatedIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-green-100/80 to-green-50/60",
       iconBg: "bg-green-100",
@@ -121,7 +147,7 @@ function Dashboard() {
     },
     {
       title: "Projets",
-      value: projects.length,
+      value: dashboardData?.projets ?? projects.length,
       icon: <ProjectsIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-indigo-100/80 to-indigo-50/60",
       iconBg: "bg-indigo-100",
@@ -139,7 +165,7 @@ function Dashboard() {
     },
     {
       title: "Tâches en retard",
-      value: nbEnRetard,
+      value: dashboardData?.tâchesEnRetard ?? nbEnRetard,
       icon: <LateTaskIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-red-100/80 to-red-50/60",
       iconBg: "bg-red-100",
@@ -203,9 +229,10 @@ function Dashboard() {
         </div>
         <button
           onClick={() => navigate("/tasks?new=1")}
-          className="mt-6 md:mt-0 px-7 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl shadow hover:from-indigo-600 hover:to-purple-700 transition text-lg"
+          className="px-5 py-2 bg-blue-600 text-white rounded-lg shadow flex items-center gap-2 hover:bg-blue-700 transition-colors duration-150 active:scale-95"
         >
-          + Nouvelle tâche
+          <PlusIcon className="animate-bounce" />
+           Nouvelle tâche
         </button>
       </div>
 

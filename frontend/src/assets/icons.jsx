@@ -1,5 +1,5 @@
 import React from "react";
-import { FaTachometerAlt, FaTasks, FaProjectDiagram, FaUsers, FaCalendarAlt, FaCog, FaCheckCircle, FaSpinner, FaUserFriends, FaHourglass,FaUserAlt, FaEye,FaEyeSlash} from "react-icons/fa";
+import { FaTachometerAlt, FaTasks, FaProjectDiagram, FaUsers, FaCalendarAlt, FaCog, FaCheckCircle, FaSpinner, FaUserFriends, FaHourglass,FaUserAlt, FaEye,FaEyeSlash, FaPlus} from "react-icons/fa";
 
 export const DashboardIcon = (props) => <FaTachometerAlt {...props}/>;
 export const TasksIcon = (props) => <FaTasks {...props}/>;
@@ -14,6 +14,7 @@ export const LateTaskIcon = (props) => <FaHourglass {...props}/>;
 export const UserIcon = (props) => <FaUserAlt {...props}/>;
 export const EyeIcon = (props) => <FaEye {...props}/>;
 export const EyeSlashIcon = (props) => <FaEyeSlash {...props}/>;
+export const PlusIcon = (props) => <FaPlus {...props}/>;
 
 
 
