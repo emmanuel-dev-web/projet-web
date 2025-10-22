@@ -11,7 +11,6 @@ import Dashboard from "./pages/Dashboard";
 import Teams from "./pages/Teams";
 import Calendar from"./pages/Calendar";
 import Projects from"./pages/Projects";
-import Settings from"./pages/Settings";
 import Tasks from"./pages/Tasks";
 
 function App(){
@@ -36,7 +35,6 @@ function App(){
         <Route path="/calendar" element={<Calendar/>}/>
         <Route path="/teams" element={<Teams/>}/>
         <Route path="/projects" element={<Projects/>}/>
-        <Route path="/settings" element={<Settings/>}/>
         <Route path="/tasks" element={<Tasks/>}/>
       </Route>
       

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ProjectsIcon,
@@ -18,6 +18,7 @@ function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [events, setEvents] = useState([]);
   const navigate = useNavigate();
 
   // Date du jour et nom utilisateur
@@ -56,9 +57,9 @@ function Dashboard() {
       });
   }, []);
 
-  // Fonction pour recharger les données du dashboard
-  const fetchDashboardData = () => {
-    console.log(" Rechargement des données dashboard...");
+  // Fonction pour recharger toutes les données
+  const fetchAllData = useCallback(() => {
+    // Recharger les données du dashboard
     fetch("http://localhost:3001/api/dashboard", {
       headers: {
         "Content-Type": "application/json",
@@ -67,18 +68,49 @@ function Dashboard() {
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log("Données dashboard reçues:", data);
         setDashboardData(data);
       })
-      .catch((err) =>
-        console.error("Erreur lors de la récupération des données du dashboard :", err)
-      );
-  };
+      .catch(() => {
+        // Erreur silencieuse - garder les données précédentes
+      });
+
+    // Recharger les tâches
+    fetch("http://localhost:3001/api/tasks", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => res.ok ? res.json() : Promise.resolve([]))
+      .then((data) => Array.isArray(data) ? setTasks(data) : setTasks([]))
+      .catch(() => setTasks([]));
+
+    // Recharger les événements
+    fetch("http://localhost:3001/api/calendar/events", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => res.ok ? res.json() : Promise.resolve({ success: false }))
+      .then((data) => {
+        if (data.success && Array.isArray(data.events)) {
+          const actualEvents = data.events.filter(event => event.type === "event");
+          setEvents(actualEvents);
+        } else {
+          setEvents([]);
+        }
+      })
+      .catch(() => setEvents([]));
+  }, []);
+
+  // Fonction pour recharger seulement les données du dashboard (pour la compatibilité)
+  const fetchDashboardData = fetchAllData;
 
   // Récupération des données du dashboard au chargement
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
 
   // Écouter les changements de focus pour recharger les données
   useEffect(() => {
@@ -88,7 +120,16 @@ function Dashboard() {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [fetchDashboardData]);
+
+  // Rechargement automatique toutes les 30 secondes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
 
   // Récupération des projets
   useEffect(() => {
@@ -103,6 +144,27 @@ function Dashboard() {
       .catch(() => setProjects([]));
   }, []);
 
+  // Récupération des événements
+  useEffect(() => {
+    fetch("http://localhost:3001/api/calendar/events", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    })
+      .then((res) => res.ok ? res.json() : Promise.resolve({ success: false }))
+      .then((data) => {
+        if (data.success && Array.isArray(data.events)) {
+          // Filtrer seulement les événements (type "event")
+          const actualEvents = data.events.filter(event => event.type === "event");
+          setEvents(actualEvents);
+        } else {
+          setEvents([]);
+        }
+      })
+      .catch(() => setEvents([]));
+  }, []);
+
   // Compteurs de tâches
   const nbAFaire = tasks.filter((t) => t.status === "a_faire").length;
   const nbEnCours = tasks.filter((t) => t.status === "en_cours").length;
@@ -115,6 +177,20 @@ function Dashboard() {
       new Date(t.deadline) < todayDate
   );
   const nbEnRetard = tasksEnRetard.length;
+
+  // Compteurs d'événements à venir (7 prochains jours)
+  const currentDate = new Date();
+  currentDate.setHours(0, 0, 0, 0);
+  const nextWeek = new Date(currentDate);
+  nextWeek.setDate(currentDate.getDate() + 7);
+  
+  const eventsÀVenir = events.filter(event => {
+    if (event.status === "annule") return false;
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= currentDate && eventDate <= nextWeek;
+  });
+  const nbEventsÀVenir = eventsÀVenir.length;
 
   // Cards data
   const cardData = [
@@ -174,7 +250,7 @@ function Dashboard() {
     },
     {
       title: "Événements à venir",
-      value: dashboardData?.événementsÀVenir ?? "--",
+      value: dashboardData?.événementsÀVenir ?? nbEventsÀVenir,
       icon: <CalendarIcon className="w-8 h-8" />,
       color: "bg-gradient-to-br from-yellow-100/80 to-yellow-50/60",
       iconBg: "bg-yellow-100",

@@ -134,6 +134,7 @@ function Tasks() {
       {/* Entête et barre de recherche */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
         <h1 className="text-3xl font-bold text-blue-800">Mes Tâches</h1>
+        <p>Gérer vos tâches, ajoutez, modifiez et supprimez des tâches facilement.</p>
         <div className="flex flex-1 items-center gap-3">
           <input
             type="text"
@@ -163,6 +164,11 @@ function Tasks() {
 
       {/* Liste des tâches */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredTasks.length === 0 && (
+          <div className="col-span-1 md:col-span-2 xl:col-span-3 text-center">
+            <p className="text-gray-500">Aucune tâche à afficher</p>
+          </div>
+        )}
         {filteredTasks.map((task) => (
           <div
             key={task._id}

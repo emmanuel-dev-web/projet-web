@@ -6,7 +6,6 @@ import {
   TeamsIcon, 
   ProjectsIcon, 
   CalendarIcon, 
-  SettingsIcon,
   LogoutIcon,
   UserIcon
 } from "../assets/icons";
@@ -108,17 +107,6 @@ function Sidebar() {
           <span>Calendrier</span>
         </NavLink>
 
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `flex items-center space-x-2 font-semibold transition ${
-              isActive ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
-            }`
-          }
-        >
-          <SettingsIcon />
-          <span>Paramètres</span>
-        </NavLink>
       </nav>
 
       {/* Section utilisateur */}

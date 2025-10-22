@@ -6,6 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware")
 const Project = require("../models/project")
 const Task = require("../models/task")
 const Team = require("../models/teams")
+const Event = require("../models/event")
 
 //Définition de la route GET /dashboard avec authentification
 router.get("/dashboard", authMiddleware, async (req, res) => {
@@ -13,24 +14,49 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
     const userId = req.user.id;
     
     // Récupérer les données réelles depuis la base de données
-    const [projects, tasks, teams] = await Promise.all([
+    const [projects, tasks, teams, events] = await Promise.all([
       Project.find({ user: userId }),
       Task.find({ user: userId }),
-      Team.find({ user: userId })
+      Team.find({ user: userId }),
+      Event.find({ user: userId })
     ]);
 
-    // Calculer les statistiques
-    const tâchesEnCours = tasks.filter(task => task.status === "en cours").length;
-    const tâchesTerminées = tasks.filter(task => task.status === "terminé").length;
+    // Calculer les statistiques (inclure tâches ET événements)
+    const tasksEnCours = tasks.filter(task => task.status === "en_cours").length;
+    const eventsEnCours = events.filter(event => event.status === "en_cours").length;
+    const tâchesEnCours = tasksEnCours + eventsEnCours;
     
-    // Calculer les tâches en retard
+    const tasksTerminées = tasks.filter(task => task.status === "termine").length;
+    const eventsTerminées = events.filter(event => event.status === "termine").length;
+    const tâchesTerminées = tasksTerminées + eventsTerminées;
+    
+    // Calculer les tâches en retard (inclure tâches ET événements)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tâchesEnRetard = tasks.filter(task => {
-      if (!task.deadline || task.status === "terminé") return false;
+    const tasksEnRetard = tasks.filter(task => {
+      if (!task.deadline || task.status === "termine") return false;
       const deadline = new Date(task.deadline);
       deadline.setHours(0, 0, 0, 0);
       return deadline < today;
+    }).length;
+    
+    const eventsEnRetard = events.filter(event => {
+      if (!event.date || event.status === "termine") return false;
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < today;
+    }).length;
+    
+    const tâchesEnRetard = tasksEnRetard + eventsEnRetard;
+    
+    // Calculer les événements à venir (7 prochains jours)
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    const événementsÀVenir = events.filter(event => {
+      if (event.status === "annule") return false;
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today && eventDate <= nextWeek;
     }).length;
 
     const dashboardData = {
@@ -39,7 +65,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
       équipes: teams.length,
       tâchesTerminées,
       tâchesEnRetard,
-      événementsÀVenir: [],
+      événementsÀVenir,
       utilisateursActifs: 1,
     }
 

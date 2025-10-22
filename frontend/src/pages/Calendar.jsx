@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   FaChevronLeft, 
   FaChevronRight, 
@@ -26,12 +26,18 @@ function Calendar() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [availableProjects, setAvailableProjects] = useState([]);
   const [newEvent, setNewEvent] = useState({
     title: "",
+    description: "",
     date: "",
-    type: "task",
-    description: ""
+    startTime: "09:00",
+    endTime: "10:00",
+    status: "planifie",
+    projectId: ""
   });
 
   // Récupérer le token d'authentification
@@ -43,105 +49,60 @@ function Calendar() {
     };
   };
 
-  // Couleurs selon le statut des tâches
-  const getTaskColor = (status) => {
-    switch (status) {
-      case "a_faire": return "bg-blue-500";
-      case "en_cours": return "bg-yellow-500";
-      case "termine": return "bg-green-500";
-      default: return "bg-gray-500";
-    }
-  };
+  // Fonction pour charger les données du calendrier
+  const loadCalendarData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Utiliser la nouvelle API Calendar qui agrège tout
+      const response = await fetch("http://localhost:3001/api/calendar/events", { 
+        headers: getAuthHeaders() 
+      });
 
-  // Couleurs selon le statut des projets
-  const getProjectColor = (status) => {
-    switch (status) {
-      case "en_cours": return "bg-indigo-500";
-      case "termine": return "bg-green-600";
-      case "en_attente": return "bg-orange-500";
-      default: return "bg-gray-600";
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.events)) {
+          setEvents(data.events);
+        } else {
+          setEvents([]);
+        }
+      } else {
+        setEvents([]);
+      }
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
+
+  // Fonction pour charger les projets disponibles
+  const loadAvailableProjects = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/calendar/projects", {
+        headers: getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && Array.isArray(data.projects)) {
+          setAvailableProjects(data.projects);
+        } else {
+          setAvailableProjects([]);
+        }
+      } else {
+        setAvailableProjects([]);
+      }
+    } catch {
+      setAvailableProjects([]);
+    }
+  }, []);
 
   // Charger toutes les données au démarrage
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        
-        const [tasksRes, projectsRes, teamsRes] = await Promise.all([
-          fetch("http://localhost:3001/api/tasks", { headers: getAuthHeaders() }),
-          fetch("http://localhost:3001/api/projects", { headers: getAuthHeaders() }),
-          fetch("http://localhost:3001/api/teams", { headers: getAuthHeaders() })
-        ]);
-
-        const [tasksData, projectsData, teamsData] = await Promise.all([
-          tasksRes.ok ? tasksRes.json() : [],
-          projectsRes.ok ? projectsRes.json() : [],
-          teamsRes.ok ? teamsRes.json() : []
-        ]);
-        
-        // Combiner toutes les données en événements calendrier
-        const calendarEvents = [];
-
-        // Ajouter les tâches avec deadline
-        if (Array.isArray(tasksData)) {
-          tasksData.forEach(task => {
-            if (task.deadline) {
-              calendarEvents.push({
-                id: `task-${task._id}`,
-                title: task.title,
-                date: task.deadline,
-                type: "task",
-                status: task.status,
-                color: getTaskColor(task.status),
-                data: task
-              });
-            }
-          });
-        }
-
-        // Ajouter les projets avec deadline
-        if (Array.isArray(projectsData)) {
-          projectsData.forEach(project => {
-            if (project.deadline) {
-              calendarEvents.push({
-                id: `project-${project._id}`,
-                title: project.title,
-                date: project.deadline,
-                type: "project",
-                status: project.status,
-                color: getProjectColor(project.status),
-                data: project
-              });
-            }
-          });
-        }
-
-        // Ajouter les équipes (date de création)
-        if (Array.isArray(teamsData)) {
-          teamsData.forEach(team => {
-            calendarEvents.push({
-              id: `team-${team._id}`,
-              title: `Équipe: ${team.name}`,
-              date: team.createdAt,
-              type: "team",
-              color: "bg-purple-500",
-              data: team
-            });
-          });
-        }
-
-        setEvents(calendarEvents);
-      } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+    loadCalendarData();
+    loadAvailableProjects();
+  }, [loadCalendarData, loadAvailableProjects]);
 
   // Navigation du calendrier
   const navigateDate = (direction) => {
@@ -162,43 +123,169 @@ function Calendar() {
 
   // Gestionnaire de création d'événement
   const handleCreateEvent = async () => {
+
     if (!newEvent.title.trim()) return;
     
+    // Vérifier qu'un projet est sélectionné
+    if (!newEvent.projectId) {
+      alert("Veuillez sélectionner un projet pour cet événement");
+      return;
+    }
+    
     try {
+      // Détermine la date de l'événement
+      let eventDate = newEvent.date;
+      if (!eventDate && selectedDate) {
+        // Utiliser la date sélectionnée dans le calendrier - format YYYY-MM-DD local
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        eventDate = `${year}-${month}-${day}`;
+      } else if (!eventDate) {
+        // Utiliser la date actuelle par défaut - format YYYY-MM-DD local
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        eventDate = `${year}-${month}-${day}`;
+      }
+      
+
+
       const eventData = {
         title: newEvent.title,
         description: newEvent.description,
-        deadline: newEvent.date || (selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+        date: eventDate,
+        startTime: newEvent.startTime,
+        endTime: newEvent.endTime,
+        status: newEvent.status,
+        projectId: newEvent.projectId
+      };
+      
+
+
+      const response = await fetch("http://localhost:3001/api/calendar/events", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(eventData),
+      });
+
+      if (response.ok) {
+        // Message de succès en vert
+        const successDiv = document.createElement('div');
+        successDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#10B981;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-weight:500';
+        successDiv.textContent = ' Événement créé avec succès !';
+        document.body.appendChild(successDiv);
+        setTimeout(() => document.body.removeChild(successDiv), 3000);
+        
+        // Recharger les données du calendrier
+        await loadCalendarData();
+
+        // Fermer la modal et réinitialiser le formulaire
+        setShowEventModal(false);
+        setNewEvent({ 
+          title: "", 
+          description: "",
+          date: "", 
+          startTime: "09:00", 
+          endTime: "10:00", 
+          status: "planifie",
+          projectId: ""
+        });
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la création de l'événement: ${errorData.message}`);
+      }
+    } catch {
+      alert("Erreur lors de la création de l'événement");
+    }
+  };
+
+  // Gestionnaire d'édition d'événement
+  const handleEditEvent = async () => {
+    if (!editingEvent || !editingEvent.title.trim()) return;
+    
+    try {
+      const eventData = {
+        title: editingEvent.title,
+        description: editingEvent.description,
+        date: editingEvent.date,
+        startTime: editingEvent.startTime,
+        endTime: editingEvent.endTime,
+        status: editingEvent.status,
+        projectId: editingEvent.projectId
       };
 
-      let apiUrl = "";
-      if (newEvent.type === "task") {
-        apiUrl = "http://localhost:3001/api/tasks";
-        eventData.status = "a_faire";
-      } else if (newEvent.type === "project") {
-        apiUrl = "http://localhost:3001/api/projects";
-        eventData.status = "en_cours";
-        eventData.manager = "Utilisateur";
-      }
+      const response = await fetch(`http://localhost:3001/api/calendar/events/${editingEvent._id}`, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(eventData),
+      });
 
-      if (apiUrl) {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(eventData),
-        });
-
-        if (response.ok) {
-          // Recharger les données
-          window.location.reload();
-        }
+      if (response.ok) {
+        // Message de succès en vert
+        const successDiv = document.createElement('div');
+        successDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#10B981;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-weight:500';
+        successDiv.textContent = ' Événement modifié avec succès !';
+        document.body.appendChild(successDiv);
+        setTimeout(() => document.body.removeChild(successDiv), 3000);
+        
+        await loadCalendarData();
+        setShowEditModal(false);
+        setEditingEvent(null);
+        setShowEventDetails(false);
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la modification de l'événement: ${errorData.message}`);
       }
-      
-      setShowEventModal(false);
-      setNewEvent({ title: "", date: "", type: "task", description: "" });
-    } catch (error) {
-      console.error("Erreur lors de la création:", error);
+    } catch {
+      alert("Erreur lors de la modification de l'événement");
     }
+  };
+
+  // Gestionnaire de suppression d'événement
+  const handleDeleteEvent = async (eventId) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return;
+    
+    try {
+      const response = await fetch(`http://localhost:3001/api/calendar/events/${eventId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        // Message de succès en vert
+        const successDiv = document.createElement('div');
+        successDiv.style.cssText = 'position:fixed;top:20px;right:20px;background:#10B981;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-weight:500';
+        successDiv.textContent = '✅ Événement supprimé avec succès !';
+        document.body.appendChild(successDiv);
+        setTimeout(() => document.body.removeChild(successDiv), 3000);
+        
+        await loadCalendarData();
+        setShowEventDetails(false);
+        setSelectedEvent(null);
+      } else {
+        const errorData = await response.json();
+        alert(`Erreur lors de la suppression de l'événement: ${errorData.message}`);
+      }
+    } catch {
+      alert("Erreur lors de la suppression de l'événement");
+    }
+  };
+
+  // Gestionnaire pour ouvrir l'édition
+  const openEditModal = (event) => {
+    setEditingEvent({
+      _id: event.data._id,
+      title: event.data.title,
+      description: event.data.description || "",
+      date: event.date.split('T')[0], // Format YYYY-MM-DD
+      startTime: event.data.startTime,
+      endTime: event.data.endTime,
+      status: event.data.status,
+      projectId: event.data.projectId
+    });
+    setShowEditModal(true);
   };
 
   // Gestionnaire de clic sur événement
@@ -237,14 +324,68 @@ function Calendar() {
     return days;
   };
 
+  // Obtenir la couleur d'un événement selon son statut
+  const getEventColor = (event) => {
+    if (event.color) return event.color; // Si la couleur est déjà définie
+    
+    if (event.type === "event" && event.status) {
+      // Couleurs selon le statut pour les événements personnalisés
+      switch (event.status) {
+        case "planifie":
+          return "bg-blue-500"; // Bleu pour planifié
+        case "en_cours":
+          return "bg-orange-500"; // Orange pour en cours
+        case "termine":
+          return "bg-green-500"; // Vert pour terminé
+        case "annule":
+          return "bg-red-500"; // Rouge pour annulé
+        default:
+          return "bg-gray-500"; // Gris par défaut
+      }
+    }
+    
+    // Couleurs par défaut selon le type
+    switch (event.type) {
+      case "task":
+        return "bg-blue-500";
+      case "project":
+        return "bg-indigo-500";
+      case "team":
+        return "bg-purple-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
   // Filtrer les événements par date
   const getEventsForDate = (date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Format de la date recherchée (local)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     return events.filter(event => {
-      const eventDate = new Date(event.date).toISOString().split('T')[0];
-      const typeFilter = filters[event.type === "task" ? "tasks" : 
-                                event.type === "project" ? "projects" : "teams"];
-      return eventDate === dateStr && typeFilter;
+      // Extraire la date de l'événement (format YYYY-MM-DD)
+      const eventDate = event.date.split('T')[0];
+      
+      // Gérer tous les types d'événements
+      let typeFilter;
+      if (event.type === "task") {
+        typeFilter = filters.tasks;
+      } else if (event.type === "project") {
+        typeFilter = filters.projects;
+      } else if (event.type === "team") {
+        typeFilter = filters.teams;
+      } else if (event.type === "event") {
+        // Les événements personnalisés sont toujours affichés
+        typeFilter = true;
+      } else {
+        typeFilter = true; // Afficher par défaut les types inconnus
+      }
+      
+      const matchesDate = eventDate === dateStr;
+      return matchesDate && typeFilter;
     });
   };
 
@@ -454,8 +595,8 @@ function Calendar() {
                     {dayEvents.slice(0, 3).map((event) => (
                       <div
                         key={event.id}
-                        className={`text-xs px-2 py-1 rounded text-white truncate ${event.color} cursor-pointer hover:opacity-80 transition-opacity`}
-                        title={event.title}
+                        className={`text-xs px-2 py-1 rounded text-white truncate ${getEventColor(event)} cursor-pointer hover:opacity-80 transition-opacity`}
+                        title={`${event.title} (${event.status || event.type})`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEventClick(event);
@@ -507,32 +648,46 @@ function Calendar() {
                 />
               </div>
 
-              {/* Type */}
+              {/* Projet associé */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type
+                  Projet associé *
                 </label>
                 <select
-                  value={newEvent.type}
-                  onChange={(e) => setNewEvent({...newEvent, type: e.target.value})}
+                  value={newEvent.projectId}
+                  onChange={(e) => setNewEvent({...newEvent, projectId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <option value="task">Tâche</option>
-                  <option value="project">Projet</option>
+                  <option value="">Sélectionner un projet</option>
+                  {availableProjects.map(project => (
+                    <option key={project._id} value={project._id}>
+                      {project.title}
+                    </option>
+                  ))}
                 </select>
+                {availableProjects.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Aucun projet disponible. Créez d'abord un projet.
+                  </p>
+                )}
               </div>
 
-              {/* Date */}
+              {/* Statut */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date d'échéance
+                  Statut
                 </label>
-                <input
-                  type="date"
-                  value={newEvent.date}
-                  onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                <select
+                  value={newEvent.status}
+                  onChange={(e) => setNewEvent({...newEvent, status: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                >
+                  <option value="planifie">Planifié</option>
+                  <option value="en_cours">En cours</option>
+                  <option value="termine">Terminé</option>
+                  <option value="annule">Annulé</option>
+                </select>
               </div>
 
               {/* Description */}
@@ -544,10 +699,51 @@ function Calendar() {
                   value={newEvent.description}
                   onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows="3"
-                  placeholder="Description optionnelle..."
+                  placeholder="Description de l'événement..."
+                  rows={3}
                 />
               </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date de l'événement
+                </label>
+                <input
+                  type="date"
+                  value={newEvent.date}
+                  onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Horaires */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Heure début
+                  </label>
+                  <input
+                    type="time"
+                    value={newEvent.startTime}
+                    onChange={(e) => setNewEvent({...newEvent, startTime: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Heure fin
+                  </label>
+                  <input
+                    type="time"
+                    value={newEvent.endTime}
+                    onChange={(e) => setNewEvent({...newEvent, endTime: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+
 
               {/* Boutons */}
               <div className="flex justify-end gap-3 pt-4 border-t">
@@ -555,7 +751,15 @@ function Calendar() {
                   type="button"
                   onClick={() => {
                     setShowEventModal(false);
-                    setNewEvent({ title: "", date: "", type: "task", description: "" });
+                    setNewEvent({ 
+                      title: "", 
+                      description: "",
+                      date: "", 
+                      startTime: "09:00", 
+                      endTime: "10:00", 
+                      status: "planifie",
+                      projectId: ""
+                    });
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                 >
@@ -578,36 +782,56 @@ function Calendar() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-              {selectedEvent.type === "task" ? <FaTasks className="text-blue-600" /> : 
+              {selectedEvent.type === "event" ? <FaCalendarAlt className="text-blue-600" /> :
+               selectedEvent.type === "task" ? <FaTasks className="text-blue-600" /> : 
                selectedEvent.type === "project" ? <FaProjectDiagram className="text-indigo-600" /> : 
                <FaUsers className="text-purple-600" />}
               {selectedEvent.title}
             </h2>
             
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-700">Type:</span>
-                <span className="capitalize">{selectedEvent.type === "task" ? "Tâche" : selectedEvent.type === "project" ? "Projet" : "Équipe"}</span>
-              </div>
+              {selectedEvent.type === "event" && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-700">Projet:</span>
+                    <span>{selectedEvent.projectTitle}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-700">Statut:</span>
+                    <span className={`px-2 py-1 rounded text-xs text-white ${getEventColor(selectedEvent)}`}>
+                      {selectedEvent.status === "planifie" ? "Planifié" :
+                       selectedEvent.status === "en_cours" ? "En cours" :
+                       selectedEvent.status === "termine" ? "Terminé" :
+                       selectedEvent.status === "annule" ? "Annulé" : selectedEvent.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-700">Horaires:</span>
+                    <span>{selectedEvent.startTime} - {selectedEvent.endTime}</span>
+                  </div>
+                </>
+              )}
               
               <div className="flex items-center gap-2">
                 <span className="font-medium text-gray-700">Date:</span>
                 <span>{new Date(selectedEvent.date).toLocaleDateString("fr-FR")}</span>
               </div>
 
-              {selectedEvent.status && (
+              {selectedEvent.type !== "event" && selectedEvent.status && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-gray-700">Statut:</span>
-                  <span className={`px-2 py-1 rounded text-xs text-white ${selectedEvent.color}`}>
+                  <span className={`px-2 py-1 rounded text-xs text-white ${getEventColor(selectedEvent)}`}>
                     {selectedEvent.status}
                   </span>
                 </div>
               )}
 
-              {selectedEvent.data?.description && (
+              {selectedEvent.description && (
                 <div>
                   <span className="font-medium text-gray-700 block mb-1">Description:</span>
-                  <p className="text-gray-600 text-sm">{selectedEvent.data.description}</p>
+                  <p className="text-gray-600 text-sm">{selectedEvent.description}</p>
                 </div>
               )}
             </div>
@@ -619,7 +843,160 @@ function Calendar() {
               >
                 Fermer
               </button>
+              
+              {selectedEvent.type === "event" && (
+                <>
+                  <button
+                    onClick={() => openEditModal(selectedEvent)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    onClick={() => handleDeleteEvent(selectedEvent.data._id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Supprimer
+                  </button>
+                </>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour éditer un événement */}
+      {showEditModal && editingEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold mb-4">Modifier l'événement</h2>
+            
+            <form onSubmit={(e) => { e.preventDefault(); handleEditEvent(); }} className="space-y-4">
+              {/* Titre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Titre *
+                </label>
+                <input
+                  type="text"
+                  value={editingEvent.title}
+                  onChange={(e) => setEditingEvent({...editingEvent, title: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Réunion équipe"
+                  required
+                />
+              </div>
+
+              {/* Projet associé */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Projet associé *
+                </label>
+                <select
+                  value={editingEvent.projectId}
+                  onChange={(e) => setEditingEvent({...editingEvent, projectId: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  <option value="">Sélectionner un projet</option>
+                  {availableProjects.map(project => (
+                    <option key={project._id} value={project._id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Statut */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Statut
+                </label>
+                <select
+                  value={editingEvent.status}
+                  onChange={(e) => setEditingEvent({...editingEvent, status: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="planifie">Planifié</option>
+                  <option value="en_cours">En cours</option>
+                  <option value="termine">Terminé</option>
+                  <option value="annule">Annulé</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={editingEvent.description}
+                  onChange={(e) => setEditingEvent({...editingEvent, description: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Description de l'événement..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date de l'événement
+                </label>
+                <input
+                  type="date"
+                  value={editingEvent.date}
+                  onChange={(e) => setEditingEvent({...editingEvent, date: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Horaires */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Heure début
+                  </label>
+                  <input
+                    type="time"
+                    value={editingEvent.startTime}
+                    onChange={(e) => setEditingEvent({...editingEvent, startTime: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Heure fin
+                  </label>
+                  <input
+                    type="time"
+                    value={editingEvent.endTime}
+                    onChange={(e) => setEditingEvent({...editingEvent, endTime: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingEvent(null);
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Modifier
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

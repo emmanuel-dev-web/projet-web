@@ -33,6 +33,9 @@ const projectRoutes = require ("./routes/projectRoutes")
 //import du router de teams
 const teamsRoutes = require ("./routes/teamsRoutes")
 
+//import du router de calendar
+const calendarRoutes = require ("./routes/calendarRoutes")
+
 // definition du chemin global pour toutes les routes de dashboard
 app.use("/api", dashboardRoutes) ;
 
@@ -44,6 +47,9 @@ app.use("/api/projects", projectRoutes);
 
 // definition du chemin global pour toutes les routes de teams
 app.use("/api/teams", teamsRoutes);
+
+// definition du chemin global pour toutes les routes de calendar
+app.use("/api/calendar", calendarRoutes);
 
 // definition d'un chemin global pour toutes les routes 
 app.use("/api/auth/", authRoutes); // cest juste pour dire que toutes les routes qui seront dans authRoutes vont commencer par /api/auth
