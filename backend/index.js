@@ -2,6 +2,7 @@
 console.log(" Le fichier index.js est exécuté");
 require('dotenv').config();
 
+
 const express = require("express");
 const cors = require("cors"); //  importer cors
 
@@ -64,18 +65,16 @@ const mongoose = require ('mongoose') // import de mongoose
 //Creer une fonction pour connecter la base de données MongoDB
 async function connectDB() {
   try {
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connecté à MongoDB avec succès :', conn.connection.host);
     
-    await mongoose.connect('mongodb://127.0.0.1:27017/alphatasks', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('Connecté à MongoDB avec succès');
   } catch (error) {
     console.error('Erreur de connexion à MongoDB :', error);
   }
 }
 
-connectDB();
+connectDB(); 
 
 
 
