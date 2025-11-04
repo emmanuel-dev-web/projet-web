@@ -30,6 +30,24 @@ app.get("/", (req, res) => {
   res.send("Server Node.js fonctionne !");
 });
 
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
+const calendarRoutes = require('./routes/calendarRoutes');
+app.use('/api/calendar', calendarRoutes);
+
+const dashboardRoutes = require('./routes/dashboardRoutes');
+app.use('/api', dashboardRoutes);
+
+const projectRoutes = require('./routes/projectRoutes');
+app.use('/api/projects', projectRoutes);
+
+const taskRoutes = require('./routes/taskRoutes');
+app.use('/api/tasks', taskRoutes);
+
+const teamsRoutes = require('./routes/teamsRoutes');
+app.use('/api/teams', teamsRoutes);
+
 // ------------------ Connexion à MongoDB ------------------
 async function connectDB() {
   try {
