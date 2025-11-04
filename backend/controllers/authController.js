@@ -63,13 +63,10 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Cet email est déjà utilisé." });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const newUser = new utilisateurs({
       name,
       email,
-      password: hashedPassword,
+      password: password,
     });
 
     await newUser.save();
@@ -126,7 +123,7 @@ const forgotPassword = async (req, res) => {
     console.log("Token sauvegardé en BDD pour l'utilisateur :", utilisateur.email);
 
     // URL du frontend de reinitialisation
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
 
     await sendEmail(
       utilisateur.email,
