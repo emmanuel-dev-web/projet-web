@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import {API_URL} from "../config.js";
 import { 
   FaChevronLeft, 
   FaChevronRight, 
