@@ -25,131 +25,251 @@ function Projects() {
     tasks: 0,
   });
 
-  // Charger les projets depuis le backend (filtrage utilisateur)
-  useEffect(() => {
-    fetch("http://localhost:3001/api/projects", {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
-      .then((res) => (res.ok ? res.json() : Promise.resolve([])))
-      .then((data) => {
-        setProjects(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setProjects([]));
-  }, []);
+    // Charger les projets depuis le backend (filtrage utilisateur)
 
-  // Format date utilitaire
-  function formatDate(dateStr) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+    useEffect(() => {
 
-  // Ajout d'un projet
-  const handleAddProject = (e) => {
-    e.preventDefault();
-    fetch("http://localhost:3001/api/projects", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-      body: JSON.stringify(newProject),
-    })
-      .then((res) => {
-        if (res.ok) {
-          setNotification({
-            show: true,
-            type: "success",
-            message: "Projet créé avec succès !",
-          });
-          return res.json();
-        } else {
-          setNotification({
-            show: true,
-            type: "error",
-            message: "Échec de la création du projet.",
-          });
-        }
-        setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
-      })
-      .then((savedProject) => {
-        if (savedProject && savedProject._id) {
-          setProjects([...projects, savedProject]);
-          setNewProject({
-            title: "",
-            manager: "",
-            status: "a_faire",
-            deadline: "",
-            progress: 0,
-            tasks: 0,
-          });
-          setShowAddModal(false);
-        }
-      });
-  };
+      fetch(`${API_URL}/api/projects`, {
 
-  // Modification d'un projet
-  const handleSave = (e) => {
-    e.preventDefault();
-    fetch(
-      `http://localhost:3001/api/projects/${
-        selectedProject._id || selectedProject.id
-      }`,
-      {
-        method: "PUT",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(selectedProject),
-      }
-    )
-      .then((res) => {
-        if (res.ok) {
-          setNotification({
-            show: true,
-            type: "success",
-            message: "Projet modifié avec succès !",
-          });
-        } else {
-          setNotification({
-            show: true,
-            type: "error",
-            message: "Échec de la modification du projet.",
-          });
-        }
-        setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
-        return res.json();
-      })
-      .then((updatedProject) => {
-        if (updatedProject && updatedProject._id) {
-          setProjects(
-            projects.map((p) =>
-              (p._id || p.id) === (updatedProject._id || updatedProject.id)
-                ? updatedProject
-                : p
-            )
-          );
-          setSelectedProject(null);
-        }
-      });
-  };
 
-  // Suppression d'un projet
-  const handleDeleteProject = (id) => {
-    fetch(`http://localhost:3001/api/projects/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    })
+          "Content-Type": "application/json",
+
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+
+        },
+
+      })
+
+        .then((res) => (res.ok ? res.json() : Promise.resolve([])))
+
+        .then((data) => {
+
+          setProjects(Array.isArray(data) ? data : []);
+
+        })
+
+        .catch(() => setProjects([]));
+
+    }, []);
+
+  
+
+    // Format date utilitaire
+
+    function formatDate(dateStr) {
+
+      if (!dateStr) return "";
+
+      const d = new Date(dateStr);
+
+      const year = d.getFullYear();
+
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+
+      const day = String(d.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+
+    }
+
+  
+
+    // Ajout d'un projet
+
+    const handleAddProject = (e) => {
+
+      e.preventDefault();
+
+      fetch(`${API_URL}/api/projects`, {
+
+        method: "POST",
+
+        headers: {
+
+          "Content-Type": "application/json",
+
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+
+        },
+
+        body: JSON.stringify(newProject),
+
+      })
+
+        .then((res) => {
+
+          if (res.ok) {
+
+            setNotification({
+
+              show: true,
+
+              type: "success",
+
+              message: "Projet créé avec succès !",
+
+            });
+
+            return res.json();
+
+          } else {
+
+            setNotification({
+
+              show: true,
+
+              type: "error",
+
+              message: "Échec de la création du projet.",
+
+            });
+
+          }
+
+          setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
+
+        })
+
+        .then((savedProject) => {
+
+          if (savedProject && savedProject._id) {
+
+            setProjects([...projects, savedProject]);
+
+            setNewProject({
+
+              title: "",
+
+              manager: "",
+
+              status: "a_faire",
+
+              deadline: "",
+
+              progress: 0,
+
+              tasks: 0,
+
+            });
+
+            setShowAddModal(false);
+
+          }
+
+        });
+
+    };
+
+  
+
+    // Modification d'un projet
+
+    const handleSave = (e) => {
+
+      e.preventDefault();
+
+      fetch(
+
+        `${API_URL}/api/projects/${selectedProject._id || selectedProject.id}`,
+
+        {
+
+          method: "PUT",
+
+          headers: {
+
+            "Content-Type": "application/json",
+
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+
+          },
+
+          body: JSON.stringify(selectedProject),
+
+        }
+
+      )
+
+        .then((res) => {
+
+          if (res.ok) {
+
+            setNotification({
+
+              show: true,
+
+              type: "success",
+
+              message: "Projet modifié avec succès !",
+
+            });
+
+          } else {
+
+            setNotification({
+
+              show: true,
+
+              type: "error",
+
+              message: "Échec de la modification du projet.",
+
+            });
+
+          }
+
+          setTimeout(() => setNotification({ show: false, type: "", message: "" }), 3000);
+
+          return res.json();
+
+        })
+
+        .then((updatedProject) => {
+
+          if (updatedProject && updatedProject._id) {
+
+            setProjects(
+
+              projects.map((p) =>
+
+                (p._id || p.id) === (updatedProject._id || updatedProject.id)
+
+                  ? updatedProject
+
+                  : p
+
+              )
+
+            );
+
+            setSelectedProject(null);
+
+          }
+
+        });
+
+    };
+
+  
+
+    // Suppression d'un projet
+
+    const handleDeleteProject = (id) => {
+
+      fetch(`${API_URL}/api/projects/${id}`, {
+
+        method: "DELETE",
+
+        headers: {
+
+          "Content-Type": "application/json",
+
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+
+        },
+
+      })
       .then((res) => {
         if (res.ok) {
           setNotification({

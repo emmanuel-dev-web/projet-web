@@ -26,7 +26,7 @@ function ResetPassword() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/auth/reset-password/${token}`, {
+      const response = await fetch(`${API_URL}/api/auth/reset-password/${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

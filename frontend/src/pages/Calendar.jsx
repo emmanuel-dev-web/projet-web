@@ -56,7 +56,7 @@ function Calendar() {
       setLoading(true);
       
       // Utiliser la nouvelle API Calendar qui agrège tout
-      const response = await fetch("http://localhost:3001/api/calendar/events", { 
+      const response = await fetch(`${API_URL}/api/calendar/events`, { 
         headers: getAuthHeaders() 
       });
 
@@ -80,7 +80,7 @@ function Calendar() {
   // Fonction pour charger les projets disponibles
   const loadAvailableProjects = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/calendar/projects", {
+      const response = await fetch(`${API_URL}/api/calendar/projects`, {
         headers: getAuthHeaders()
       });
       
@@ -165,7 +165,7 @@ function Calendar() {
       
 
 
-      const response = await fetch("http://localhost:3001/api/calendar/events", {
+      const response = await fetch(`${API_URL}/api/calendar/events`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(eventData),
@@ -217,7 +217,7 @@ function Calendar() {
         projectId: editingEvent.projectId
       };
 
-      const response = await fetch(`http://localhost:3001/api/calendar/events/${editingEvent._id}`, {
+      const response = await fetch(`${API_URL}/api/calendar/events/${editingEvent._id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(eventData),
@@ -249,7 +249,7 @@ function Calendar() {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/calendar/events/${eventId}`, {
+      const response = await fetch(`${API_URL}/api/calendar/events/${eventId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });

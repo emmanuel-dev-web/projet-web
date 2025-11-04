@@ -35,7 +35,7 @@ function Teams() {
     const loadTeams = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:3001/api/teams", {
+        const response = await fetch(`${API_URL}/api/teams`, {
           headers: getAuthHeaders(),
         });
 
@@ -71,7 +71,7 @@ function Teams() {
     if (!form.name.trim()) return;
 
     try {
-      const response = await fetch("http://localhost:3001/api/teams", {
+      const response = await fetch(`${API_URL}/api/teams`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -104,7 +104,7 @@ function Teams() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/teams/${id}`, {
+      const response = await fetch(`${API_URL}/api/teams/${id}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
       });
@@ -138,7 +138,7 @@ function Teams() {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:3001/api/teams/${selectedTeam._id}`, {
+      const response = await fetch(`${API_URL}/api/teams/${selectedTeam._id}`, {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify({

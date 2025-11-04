@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../config.js";
 import {
   ProjectsIcon,
   TaskOnGoingIcon,
@@ -27,7 +28,7 @@ function Dashboard() {
     const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
     setToday(date.toLocaleDateString("fr-FR", options));
 
-    fetch("http://localhost:3001/api/auth/user/me", {
+    fetch(`${API_URL}/api/auth/user/me`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -43,7 +44,7 @@ function Dashboard() {
 
   // Récupération des tâches
   useEffect(() => {
-    fetch("http://localhost:3001/api/tasks", {
+    fetch(`${API_URL}/api/tasks`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -60,7 +61,7 @@ function Dashboard() {
   // Fonction pour recharger toutes les données
   const fetchAllData = useCallback(() => {
     // Recharger les données du dashboard
-    fetch("http://localhost:3001/api/dashboard", {
+    fetch(`${API_URL}/api/dashboard`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -75,7 +76,7 @@ function Dashboard() {
       });
 
     // Recharger les tâches
-    fetch("http://localhost:3001/api/tasks", {
+    fetch(`${API_URL}/api/tasks`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -86,7 +87,7 @@ function Dashboard() {
       .catch(() => setTasks([]));
 
     // Recharger les événements
-    fetch("http://localhost:3001/api/calendar/events", {
+    fetch(`${API_URL}/api/calendar/events`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -133,7 +134,7 @@ function Dashboard() {
 
   // Récupération des projets
   useEffect(() => {
-    fetch("http://localhost:3001/api/projects", {
+    fetch(`${API_URL}/api/projects`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -146,7 +147,7 @@ function Dashboard() {
 
   // Récupération des événements
   useEffect(() => {
-    fetch("http://localhost:3001/api/calendar/events", {
+    fetch(`${API_URL}/api/calendar/events`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,

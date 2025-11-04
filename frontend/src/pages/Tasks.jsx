@@ -13,7 +13,7 @@ function Tasks() {
   const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/tasks", {
+    fetch(`${API_URL}/api/tasks`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -25,7 +25,7 @@ function Tasks() {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:3001/api/projects", {
+    fetch(`${API_URL}/api/projects`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -50,7 +50,7 @@ function Tasks() {
   const handleSaveTask = (newTask, isEdit = false) => {
     if (isEdit && newTask._id) {
       // Edition
-      fetch(`http://localhost:3001/api/tasks/${newTask._id}`, {
+      fetch(`${API_URL}/api/tasks/${newTask._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -66,7 +66,7 @@ function Tasks() {
         });
     } else {
       // Ajout
-      fetch("http://localhost:3001/api/tasks", {
+      fetch(`${API_URL}/api/tasks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,7 +84,7 @@ function Tasks() {
 
   // Suppression
   const handleDelete = (id) => {
-    fetch(`http://localhost:3001/api/tasks/${id}`, {
+    fetch(`${API_URL}/api/tasks/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -102,7 +102,7 @@ function Tasks() {
 
   // Marquer comme terminé
   const handleMarkAsDone = (id) => {
-    fetch(`http://localhost:3001/api/tasks/${id}`, {
+    fetch(`${API_URL}/api/tasks/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
