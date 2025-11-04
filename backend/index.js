@@ -18,7 +18,8 @@ app.use(express.json());
 app.use(cors({
   origin: [
     /^http:\/\/localhost:\d+$/,                   // localhost pour développement
-    'https://projet-web-4-s2fz.onrender.com'     // frontend Render
+    'https://projet-web-4-s2fz.onrender.com',     // frontend Render
+    'https://projet-web-front-tt1c.onrender.com'
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
