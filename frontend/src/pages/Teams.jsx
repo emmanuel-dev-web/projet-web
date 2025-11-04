@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaTrash, FaEdit, FaUsers, FaUserCircle } from "react-icons/fa";
+import API_URL from "../config.js";
 
 function Teams() {
   const [teams, setTeams] = useState([]);

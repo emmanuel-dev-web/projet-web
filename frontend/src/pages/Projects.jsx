@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { FaPlus, FaEdit, FaTrash, FaFolderOpen } from "react-icons/fa"; // Ajout de FaFolderOpen
 import ProjectLists from "../components/ProjectLists";
 import ProjectForm from "../components/ProjectForm";
+import API_URL from "../config.js";
 
 function Projects() {
   const [search, setSearch] = useState("");

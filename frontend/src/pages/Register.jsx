@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { EyeIcon, EyeSlashIcon } from "../assets/icons";
+import API_URL from "../config.js";
 
 function Register() {
   const [email, setEmail] = useState("");

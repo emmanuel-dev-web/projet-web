@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import API_URL from "../config.js";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");

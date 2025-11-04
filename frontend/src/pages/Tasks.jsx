@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import TaskForm from "../components/TaskForm";
+import API_URL from "../config.js";
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
